@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "440300652903",
+    "project_id": "challenger-mobile-92c24",
+    "storage_bucket": "challenger-mobile-92c24.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:440300652903:android:c476b04ca0978da990c7c2",
+        "android_client_info": {
+          "package_name": "com.example.challengermobile"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAbIbAiR39-DMbcxpQaa6eRUv1EGWeZo0M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

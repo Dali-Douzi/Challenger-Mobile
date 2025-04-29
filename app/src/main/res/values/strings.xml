@@ -1,0 +1,79 @@
+<resources>
+    <string name="app_name">ChallengerMobile</string>
+    <string name="email">Email</string>
+    <string name="password">Password</string>
+    <string name="login">Login</string>
+    <string name="welcome_to_the_dashboard">Welcome to the Dashboard!</string>
+    <string name="register">Register</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="logout">Logout</string>
+    <string name="profile">Profile</string>
+
+    <string-array name="video_game_list">
+        <item>League of Legends</item>
+        <item>Apex Legends</item>
+        <item>Valorant</item>
+        <item>CS2</item>
+        <item>Rocket League</item>
+    </string-array>
+
+    <string-array name="lol_rank_list">
+        <item>Iron</item>
+        <item>Bronze</item>
+        <item>Silver</item>
+        <item>Gold</item>
+        <item>Platinum</item>
+        <item>Diamond</item>
+        <item>Master</item>
+        <item>Grandmaster</item>
+        <item>Challenger</item>
+    </string-array>
+
+    <string-array name="apex_rank_list">
+        <item>Bronze</item>
+        <item>Silver</item>
+        <item>Gold</item>
+        <item>Platinum</item>
+        <item>Diamond</item>
+        <item>Master</item>
+        <item>Predator</item>
+    </string-array>
+
+    <string-array name="valorant_rank_list">
+        <item>Iron</item>
+        <item>Bronze</item>
+        <item>Silver</item>
+        <item>Gold</item>
+        <item>Platinum</item>
+        <item>Diamond</item>
+        <item>Immortal</item>
+        <item>Radiant</item>
+    </string-array>
+
+    <string-array name="cs2_rank_list">
+        <item>Silver 1</item>
+        <item>Silver 2</item>
+        <item>Silver 3</item>
+        <item>Silver Elite</item>
+        <item>Gold Nova</item>
+        <item>Master Guardian</item>
+        <item>Legendary Eagle</item>
+        <item>Supreme</item>
+        <item>Global Elite</item>
+    </string-array>
+
+    <string-array name="rocket_league_rank_list">
+        <item>Bronze</item>
+        <item>Silver</item>
+        <item>Gold</item>
+        <item>Platinum</item>
+        <item>Diamond</item>
+        <item>Champion</item>
+        <item>Grand Champion</item>
+        <item>Supersonic Legend</item>
+    </string-array>
+
+    <string-array name="team_rank_list">
+    </string-array>
+
+</resources>

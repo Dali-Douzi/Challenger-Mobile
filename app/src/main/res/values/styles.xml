@@ -1,0 +1,15 @@
+<resources>
+    <!-- Base application theme -->
+    <style name="Theme.ChallengerMobile" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Remove the ActionBar by setting windowActionBar to false -->
+        <item name="windowActionBar">false</item>
+
+        <!-- Disable the title bar to use custom Toolbar -->
+        <item name="windowNoTitle">true</item>
+
+        <!-- Customize your theme here -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+</resources>
