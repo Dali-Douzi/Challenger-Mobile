@@ -1,115 +1,178 @@
+// DashboardActivity.java
 package com.example.challengermobile;
 
+import android.content.ClipData;
+import android.content.ClipboardManager;
+import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
+import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.Button;
+import android.widget.EditText;
 import android.widget.Toast;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.firestore.DocumentSnapshot;
+import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.QuerySnapshot;
 
-import java.util.List;
-import java.util.Objects;
-
+import java.util.HashMap;
+import java.util.Map;
 
 public class DashboardActivity extends AppCompatActivity {
 
-    private FirebaseAuth mAuth;
+    private FirebaseAuth    mAuth;
+    private FirebaseFirestore db;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_dashboard);
 
-        // Initialize Firebase Authentication
         mAuth = FirebaseAuth.getInstance();
+        db    = FirebaseFirestore.getInstance();
 
-        // Set up the Toolbar as the ActionBar
-        Toolbar toolbar = findViewById(R.id.toolbar);  // Ensure this is androidx.appcompat.widget.Toolbar
-        setSupportActionBar(toolbar);  // This will make the Toolbar act as the ActionBar
-
-        // Setting up buttons (Request Scrim and Post Scrim)
-        Button requestScrimButton = findViewById(R.id.requestScrimButton);
-        Button postScrimButton = findViewById(R.id.postScrimButton);
-
-        // Request Scrim button functionality
-        requestScrimButton.setOnClickListener(v -> {
-            // Placeholder for Request Scrim logic
-            Toast.makeText(DashboardActivity.this, "Request Scrim clicked", Toast.LENGTH_SHORT).show();
-        });
-
-        // Post Scrim button functionality
-        postScrimButton.setOnClickListener(v -> {
-            // Placeholder for Post Scrim logic
-            Toast.makeText(DashboardActivity.this, "Post Scrim clicked", Toast.LENGTH_SHORT).show();
-        });
+        Toolbar toolbar = findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
+        menu.clear();
         getMenuInflater().inflate(R.menu.profile_menu, menu);
-
-        FirebaseUser user = mAuth.getCurrentUser();
-        if (user != null) {
-            List<String> userTeams = getUserTeams();
-
-            for (String team : userTeams) {
-                menu.add(Menu.NONE, Menu.NONE, Menu.NONE, team);
-            }
-        }
         return true;
     }
 
-    private void getUserTeams() {
-        // Get the current user's ID
-        String userId = mAuth.getCurrentUser().getUid();
+    @Override
+    public boolean onPrepareOptionsMenu(Menu menu) {
+        menu.removeGroup(R.id.group_teams);
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user != null) {
+            db.collection("users")
+                    .document(user.getUid())
+                    .collection("teams")
+                    .get()
+                    .addOnSuccessListener((QuerySnapshot qs) -> {
+                        int order = 20;
+                        menu.removeGroup(R.id.group_teams);
+                        for (DocumentSnapshot doc : qs.getDocuments()) {
+                            String name = doc.getString("teamName");
+                            String id   = doc.getId();
+                            Intent intent = new Intent(this, TeamDashboardActivity.class)
+                                    .putExtra(TeamDashboardActivity.EXTRA_TEAM_ID, id);
 
-        // Reference to the teams collection for the current user
-        CollectionReference teamsRef = db.collection("users").document(userId).collection("teams");
-
-        teamsRef.get().addOnCompleteListener(task -> {
-            if (task.isSuccessful()) {
-                QuerySnapshot querySnapshot = task.getResult();
-                if (querySnapshot != null && !querySnapshot.isEmpty()) {
-                    userTeams = new ArrayList<>();
-                    for (DocumentSnapshot document : querySnapshot.getDocuments()) {
-                        String teamName = document.getString("teamName");  // Assuming each team has a field "teamName"
-                        userTeams.add(teamName);
-                    }
-
-                    // Update the UI (e.g., populate the Spinner or RecyclerView with the user's teams)
-                    updateUIWithTeams();
-                } else {
-                    Toast.makeText(DashboardActivity.this, "No teams found for this user", Toast.LENGTH_SHORT).show();
-                }
-            } else {
-                Toast.makeText(DashboardActivity.this, "Error fetching teams: " + task.getException().getMessage(), Toast.LENGTH_LONG).show();
-            }
-        });
+                            menu.add(
+                                    R.id.group_teams,
+                                    Menu.NONE,
+                                    order++,
+                                    name
+                            ).setIntent(intent);
+                        }
+                    });
+        }
+        return super.onPrepareOptionsMenu(menu);
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        String selectedTeam = Objects.requireNonNull(item.getTitle()).toString();
-
-        if (item.getItemId() == R.id.menu_create_team) {
-            startActivity(new Intent(DashboardActivity.this, CreateTeamActivity.class));
-            return true;
-        } else if (item.getItemId() == R.id.menu_logout) {
-            mAuth.signOut();
-            startActivity(new Intent(DashboardActivity.this, LoginActivity.class));
-            finish();
-            return true;
-        } else {
-            Intent intent = new Intent(DashboardActivity.this, PostScrimActivity.class);
-            intent.putExtra("selected_team", selectedTeam);
-            startActivity(intent);
+        int mid = item.getItemId();
+        if (mid == R.id.menu_profile) {
+            startActivity(new Intent(this, ProfileActivity.class));
             return true;
         }
+        if (mid == R.id.menu_create_team) {
+            startActivity(new Intent(this, CreateTeamActivity.class));
+            return true;
+        }
+        if (mid == R.id.menu_join_team) {
+            showJoinTeamDialog();
+            return true;
+        }
+        if (mid == R.id.menu_logout) {
+            mAuth.signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
+            return true;
+        }
+        // Dynamic team items
+        if (item.getGroupId() == R.id.group_teams) {
+            startActivity(item.getIntent());
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    private void showJoinTeamDialog() {
+        EditText et = new EditText(this);
+        et.setHint("Team Code");
+        et.setInputType(InputType.TYPE_CLASS_TEXT);
+
+        new AlertDialog.Builder(this)
+                .setTitle("Join Team")
+                .setView(et)
+                .setPositiveButton("Join", (d, w) -> {
+                    String code = et.getText().toString().trim();
+                    if (code.isEmpty()) {
+                        Toast.makeText(this, "Please enter a code", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    db.collectionGroup("teams")
+                            .whereEqualTo("joinCode", code)
+                            .get()
+                            .addOnSuccessListener(qs -> {
+                                if (qs.isEmpty()) {
+                                    Toast.makeText(this, "Invalid code", Toast.LENGTH_SHORT).show();
+                                    return;
+                                }
+                                DocumentSnapshot t = qs.getDocuments().get(0);
+                                String ownerUid = t.getReference()
+                                        .getParent().getParent().getId();
+                                String teamName = t.getString("teamName");
+                                String game     = t.getString("game");
+                                String rank     = t.getString("rank");
+
+                                String me = mAuth.getCurrentUser().getUid();
+                                Map<String,Object> data = new HashMap<>();
+                                data.put("teamName", teamName);
+                                data.put("game",     game);
+                                data.put("rank",     rank);
+                                data.put("joinCode", code);
+                                data.put("ownerUid", ownerUid);
+
+                                // Add to my teams
+                                db.collection("users")
+                                        .document(me)
+                                        .collection("teams")
+                                        .add(data);
+
+                                // Mark me as a member under the original owner’s path
+                                Map<String,Object> member = new HashMap<>();
+                                String display = mAuth.getCurrentUser().getDisplayName();
+                                if (display == null) display = me;
+                                member.put("name", display);
+                                member.put("role", "Player");
+                                t.getReference()
+                                        .collection("members")
+                                        .add(member);
+
+                                Toast.makeText(this,
+                                        "Joined " + teamName,
+                                        Toast.LENGTH_SHORT).show();
+                                invalidateOptionsMenu();
+                            })
+                            .addOnFailureListener(e ->
+                                    Toast.makeText(this,
+                                            "Error: " + e.getMessage(),
+                                            Toast.LENGTH_LONG).show()
+                            );
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
     }
 }

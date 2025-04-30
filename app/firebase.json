@@ -1,0 +1,14 @@
+{
+  "firestore": {
+    "indexes": [
+      {
+        "collectionGroup": "teams",
+        "queryScope": "COLLECTION",
+        "fields": [
+          { "fieldPath": "joinCode", "order": "ASCENDING" },
+          { "fieldPath": "__name__",   "order": "ASCENDING" }
+        ]
+      }
+    ]
+  }
+}

@@ -8,6 +8,8 @@
     <string name="confirm_password">Confirm Password</string>
     <string name="logout">Logout</string>
     <string name="profile">Profile</string>
+    <string name="join_team">Join Team</string>
+    <string name="create_team">Create Team</string>
 
     <string-array name="video_game_list">
         <item>League of Legends</item>

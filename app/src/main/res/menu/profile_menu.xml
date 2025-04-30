@@ -1,28 +1,37 @@
-<menu xmlns:tools="http://schemas.android.com/tools"
-    xmlns:android="http://schemas.android.com/apk/res/android">
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <!-- User's Teams Section -->
-    <group android:id="@+id/group_teams">
-        <item
-            android:id="@+id/menu_team1"
-            android:title="Team 1"
-            tools:ignore="HardcodedText" />  <!-- Example team -->
-        <item
-            android:id="@+id/menu_team2"
-            android:title="Team 2"
-            tools:ignore="HardcodedText" />  <!-- Example team -->
-        <!-- Add more teams dynamically from Firebase -->
-    </group>
+    <!-- Profile -->
+    <item
+        android:id="@+id/menu_profile"
+        android:title="@string/profile"
+        android:orderInCategory="10"
+        app:showAsAction="never"/>
 
-    <!-- Create Team Button -->
+    <!-- Placeholder for dynamic user teams -->
+    <group
+        android:id="@+id/group_teams"
+        android:orderInCategory="20"/>
+
+    <!-- Create Team -->
     <item
         android:id="@+id/menu_create_team"
-        android:title="Create Team"
-        tools:ignore="HardcodedText" />
+        android:title="@string/create_team"
+        android:orderInCategory="30"
+        app:showAsAction="never"/>
 
-    <!-- Logout Button -->
+    <!-- Join Team -->
+    <item
+        android:id="@+id/menu_join_team"
+        android:title="@string/join_team"
+        android:orderInCategory="40"
+        app:showAsAction="never"/>
+
+    <!-- Logout -->
     <item
         android:id="@+id/menu_logout"
-        android:title="Logout"
-        tools:ignore="HardcodedText" />
+        android:title="@string/logout"
+        android:orderInCategory="99"
+        app:showAsAction="never"/>
 </menu>

@@ -41,6 +41,21 @@
             android:label="Profile"
             android:theme="@style/Theme.ChallengerMobile" />
 
+        <activity
+            android:name=".CreateTeamActivity"
+            android:label="Create Team"
+            android:theme="@style/Theme.ChallengerMobile" />
+
+        <activity
+            android:name=".PostScrimActivity"
+            android:label="Post Scrim"
+            android:theme="@style/Theme.ChallengerMobile" />
+
+        <activity
+            android:name=".TeamDashboardActivity"
+            android:parentActivityName=".DashboardActivity"
+            android:theme="@style/Theme.ChallengerMobile"/>
+
     </application>
 
 </manifest>

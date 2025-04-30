@@ -1,0 +1,35 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Top-level scrims collection ───────────────────
+    match /scrims/{scrimId} {
+      // any signed-in user can list and get scrims
+      allow read:   if request.auth.uid != null;
+      // any signed-in user can post a scrim
+      allow create: if request.auth.uid != null;
+      // no direct edits or deletes
+      allow update, delete: if false;
+    }
+
+    // ── ANY “teams” subcollection for collection-group queries ────
+    // this lets your collectionGroup(“teams”) lookup succeed
+    match /{path=**}/teams/{teamId} {
+      allow read: if request.auth.uid != null;
+    }
+
+    // ── Users’ own teams ────────────────────────────────
+    match /users/{userId}/teams/{teamId} {
+      allow create, update, delete: if request.auth.uid == userId;
+    }
+
+    // ── Members inside each team ─────────────────────────
+    match /users/{userId}/teams/{teamId}/members/{memberId} {
+      allow read:   if request.auth.uid != null;   // list members
+      allow create: if request.auth.uid != null;   // join yourself
+      allow update, delete: if request.auth.uid == userId; // owner only
+    }
+
+    // (other collections stay locked down by default)
+  }
+}

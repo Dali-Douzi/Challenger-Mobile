@@ -1,6 +1,5 @@
 package com.example.challengermobile;
 
-import android.annotation.SuppressLint;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -12,46 +11,48 @@ import androidx.recyclerview.widget.RecyclerView;
 import java.text.SimpleDateFormat;
 import java.util.List;
 
-public class ScrimAdapter extends RecyclerView.Adapter<ScrimAdapter.ScrimViewHolder> {
+public class ScrimAdapter extends RecyclerView.Adapter<ScrimAdapter.ViewHolder> {
+    private List<Scrim> scrims;
 
-    private final List<Scrim> scrimList;
+    public ScrimAdapter(List<Scrim> scrims) {
+        this.scrims = scrims;
+    }
 
-    public ScrimAdapter(List<Scrim> scrimList) {
-        this.scrimList = scrimList;
+    public void updateList(List<Scrim> newList) {
+        this.scrims = newList;
+        notifyDataSetChanged();
     }
 
     @NonNull
     @Override
-    public ScrimViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View itemView = LayoutInflater.from(parent.getContext())
+    public ViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
+        View v = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.scrim_item, parent, false);
-        return new ScrimViewHolder(itemView);
+        return new ViewHolder(v);
     }
 
-    @SuppressLint("SimpleDateFormat")
     @Override
-    public void onBindViewHolder(ScrimViewHolder holder, int position) {
-        Scrim scrim = scrimList.get(position);
-        holder.teamA.setText(scrim.getTeamA());
-        holder.teamB.setText(scrim.getTeamB());
-        holder.scrimDate.setText(new SimpleDateFormat("MM/dd/yyyy").format(scrim.getScrimDate()));
-        holder.status.setText(scrim.getStatus());
+    public void onBindViewHolder(@NonNull ViewHolder holder, int position) {
+        Scrim s = scrims.get(position);
+        holder.teamA.setText(s.getTeamA());
+        holder.teamB.setText(s.getTeamB());
+        holder.scrimDate.setText(new SimpleDateFormat("MM/dd/yyyy HH:mm").format(s.getScrimDate()));
+        holder.status.setText(s.getStatus());
     }
 
     @Override
     public int getItemCount() {
-        return scrimList.size();
+        return scrims.size();
     }
 
-    public static class ScrimViewHolder extends RecyclerView.ViewHolder {
-        public TextView teamA, teamB, scrimDate, status;
-
-        public ScrimViewHolder(View view) {
-            super(view);
-            teamA = view.findViewById(R.id.teamA);
-            teamB = view.findViewById(R.id.teamB);
-            scrimDate = view.findViewById(R.id.scrimDate);
-            status = view.findViewById(R.id.status);
+    static class ViewHolder extends RecyclerView.ViewHolder {
+        TextView teamA, teamB, scrimDate, status;
+        public ViewHolder(View itemView) {
+            super(itemView);
+            teamA     = itemView.findViewById(R.id.teamA);
+            teamB     = itemView.findViewById(R.id.teamB);
+            scrimDate = itemView.findViewById(R.id.scrimDate);
+            status    = itemView.findViewById(R.id.status);
         }
     }
 }
