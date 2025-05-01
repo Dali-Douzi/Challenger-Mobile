@@ -1,4 +1,3 @@
-// DashboardActivity.java
 package com.example.challengermobile;
 
 import android.content.ClipData;
@@ -20,14 +19,13 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
-import com.google.firebase.firestore.QuerySnapshot;
 
 import java.util.HashMap;
 import java.util.Map;
 
 public class DashboardActivity extends AppCompatActivity {
 
-    private FirebaseAuth    mAuth;
+    private FirebaseAuth     mAuth;
     private FirebaseFirestore db;
 
     @Override
@@ -58,7 +56,7 @@ public class DashboardActivity extends AppCompatActivity {
                     .document(user.getUid())
                     .collection("teams")
                     .get()
-                    .addOnSuccessListener((QuerySnapshot qs) -> {
+                    .addOnSuccessListener(qs -> {
                         int order = 20;
                         menu.removeGroup(R.id.group_teams);
                         for (DocumentSnapshot doc : qs.getDocuments()) {
@@ -100,7 +98,6 @@ public class DashboardActivity extends AppCompatActivity {
             finish();
             return true;
         }
-        // Dynamic team items
         if (item.getGroupId() == R.id.group_teams) {
             startActivity(item.getIntent());
             return true;
@@ -116,12 +113,14 @@ public class DashboardActivity extends AppCompatActivity {
         new AlertDialog.Builder(this)
                 .setTitle("Join Team")
                 .setView(et)
-                .setPositiveButton("Join", (d, w) -> {
+                .setPositiveButton("Join", (dialog, which) -> {
                     String code = et.getText().toString().trim();
                     if (code.isEmpty()) {
                         Toast.makeText(this, "Please enter a code", Toast.LENGTH_SHORT).show();
                         return;
                     }
+
+                    // 1) Find the team document by joinCode
                     db.collectionGroup("teams")
                             .whereEqualTo("joinCode", code)
                             .get()
@@ -130,41 +129,66 @@ public class DashboardActivity extends AppCompatActivity {
                                     Toast.makeText(this, "Invalid code", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
+
                                 DocumentSnapshot t = qs.getDocuments().get(0);
                                 String ownerUid = t.getReference()
-                                        .getParent().getParent().getId();
+                                        .getParent()     // .../teams
+                                        .getParent()     // .../users/{ownerUid}
+                                        .getId();
+                                String teamId   = t.getReference().getId();
                                 String teamName = t.getString("teamName");
                                 String game     = t.getString("game");
                                 String rank     = t.getString("rank");
+                                String logoUrl  = t.getString("logoUrl");
 
                                 String me = mAuth.getCurrentUser().getUid();
+
+                                // 2) Prepare team metadata
                                 Map<String,Object> data = new HashMap<>();
                                 data.put("teamName", teamName);
                                 data.put("game",     game);
                                 data.put("rank",     rank);
                                 data.put("joinCode", code);
                                 data.put("ownerUid", ownerUid);
+                                if (logoUrl != null) {
+                                    data.put("logoUrl", logoUrl);
+                                }
 
-                                // Add to my teams
+                                // 3) Write under my teams/{teamId}
                                 db.collection("users")
                                         .document(me)
                                         .collection("teams")
-                                        .add(data);
+                                        .document(teamId)
+                                        .set(data)
+                                        .addOnSuccessListener(a -> {
+                                            // 4) Mark me as a member under the owner's members subcollection
+                                            Map<String,Object> member = new HashMap<>();
+                                            String display = mAuth.getCurrentUser().getDisplayName();
+                                            if (display == null) display = me;
+                                            member.put("name", display);
+                                            member.put("role", "Member");
 
-                                // Mark me as a member under the original owner’s path
-                                Map<String,Object> member = new HashMap<>();
-                                String display = mAuth.getCurrentUser().getDisplayName();
-                                if (display == null) display = me;
-                                member.put("name", display);
-                                member.put("role", "Player");
-                                t.getReference()
-                                        .collection("members")
-                                        .add(member);
-
-                                Toast.makeText(this,
-                                        "Joined " + teamName,
-                                        Toast.LENGTH_SHORT).show();
-                                invalidateOptionsMenu();
+                                            t.getReference()
+                                                    .collection("members")
+                                                    .document(me)
+                                                    .set(member)
+                                                    .addOnSuccessListener(a2 -> {
+                                                        Toast.makeText(this,
+                                                                "Joined " + teamName,
+                                                                Toast.LENGTH_SHORT).show();
+                                                        invalidateOptionsMenu();
+                                                    })
+                                                    .addOnFailureListener(e2 -> {
+                                                        Toast.makeText(this,
+                                                                "Error adding member: " + e2.getMessage(),
+                                                                Toast.LENGTH_LONG).show();
+                                                    });
+                                        })
+                                        .addOnFailureListener(e1 -> {
+                                            Toast.makeText(this,
+                                                    "Error joining team: " + e1.getMessage(),
+                                                    Toast.LENGTH_LONG).show();
+                                        });
                             })
                             .addOnFailureListener(e ->
                                     Toast.makeText(this,
