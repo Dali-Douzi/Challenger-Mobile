@@ -4,32 +4,45 @@ service cloud.firestore {
 
     // ── Top-level scrims collection ───────────────────
     match /scrims/{scrimId} {
-      // any signed-in user can list and get scrims
       allow read:   if request.auth.uid != null;
-      // any signed-in user can post a scrim
       allow create: if request.auth.uid != null;
-      // no direct edits or deletes
       allow update, delete: if false;
     }
 
     // ── ANY “teams” subcollection for collection-group queries ────
-    // this lets your collectionGroup(“teams”) lookup succeed
+    // (lets your collectionGroup("teams") lookups succeed)
     match /{path=**}/teams/{teamId} {
       allow read: if request.auth.uid != null;
     }
 
     // ── Users’ own teams ────────────────────────────────
     match /users/{userId}/teams/{teamId} {
-      allow create, update, delete: if request.auth.uid == userId;
+      // list only under your own userId
+      allow read:   if request.auth.uid == userId;
+      // you can always create your own team copy...
+      // ...and the original owner can also create one under your path
+      allow create: if request.auth.uid == userId
+        || exists(/databases/$(database)/documents/users/$(request.auth.uid)/teams/$(teamId));
+      // only you can update your own path
+      allow update: if request.auth.uid == userId;
+      // you or the current ownerUid stamped on the doc can delete
+      allow delete: if request.auth.uid == userId
+        || get(/databases/$(database)/documents/users/$(userId)/teams/$(teamId)).data.ownerUid == request.auth.uid;
     }
 
     // ── Members inside each team ─────────────────────────
-    match /users/{userId}/teams/{teamId}/members/{memberId} {
-      allow read:   if request.auth.uid != null;   // list members
-      allow create: if request.auth.uid != null;   // join yourself
-      allow update, delete: if request.auth.uid == userId; // owner only
+    match /users/{ownerUid}/teams/{teamId}/members/{memberUid} {
+      // only that member themself can join/create their record
+      allow create: if request.auth.uid == memberUid;
+      // owner or that member themself can create a membership
+      allow create: if request.auth.uid == ownerUid
+        || request.auth.uid == memberUid;
+      // only the owner can change roles
+      allow update: if request.auth.uid == ownerUid;
+      // owner or that member can delete the membership
+      allow delete: if request.auth.uid == ownerUid
+        || request.auth.uid == memberUid;
     }
 
-    // (other collections stay locked down by default)
   }
 }

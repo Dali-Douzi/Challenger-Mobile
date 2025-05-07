@@ -1,3 +1,4 @@
+// MembersAdapter.java
 package com.example.challengermobile;
 
 import android.view.LayoutInflater;
@@ -7,6 +8,7 @@ import android.widget.TextView;
 import android.widget.Spinner;
 import android.widget.ArrayAdapter;
 import android.widget.AdapterView;
+import android.widget.Button;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -19,17 +21,23 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         void onRoleChanged(String memberId, String newRole);
     }
 
-    public List<Member> getMemberList() {
-        return memberList;
+    public interface KickMemberListener {
+        void onKickMember(String memberId);
     }
+
     private List<Member> memberList;
     private boolean isOwner;
     private RoleChangeListener roleChangeListener;
+    private KickMemberListener kickMemberListener;
 
-    public MembersAdapter(List<Member> memberList, boolean isOwner, RoleChangeListener roleChangeListener) {
-        this.memberList = memberList;
-        this.isOwner = isOwner;
+    public MembersAdapter(List<Member> memberList,
+                          boolean isOwner,
+                          RoleChangeListener roleChangeListener,
+                          KickMemberListener kickMemberListener) {
+        this.memberList        = memberList;
+        this.isOwner           = isOwner;
         this.roleChangeListener = roleChangeListener;
+        this.kickMemberListener = kickMemberListener;
     }
 
     public void updateList(List<Member> newList) {
@@ -37,8 +45,7 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         notifyDataSetChanged();
     }
 
-    @NonNull
-    @Override
+    @NonNull @Override
     public MemberViewHolder onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View item = LayoutInflater.from(parent.getContext())
                 .inflate(R.layout.item_member, parent, false);
@@ -51,10 +58,10 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         holder.tvName.setText(m.getName());
         holder.tvRole.setText(m.getRole());
 
+        // Role spinner logic (unchanged)
         if (isOwner) {
             holder.tvRole.setVisibility(View.GONE);
             holder.spinnerRole.setVisibility(View.VISIBLE);
-
             ArrayAdapter<CharSequence> adapter = ArrayAdapter.createFromResource(
                     holder.itemView.getContext(),
                     R.array.team_role_list,
@@ -62,26 +69,31 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
             );
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
             holder.spinnerRole.setAdapter(adapter);
-
-            int spinnerPosition = adapter.getPosition(m.getRole());
-            holder.spinnerRole.setSelection(spinnerPosition);
-
+            int posn = adapter.getPosition(m.getRole());
+            holder.spinnerRole.setSelection(posn);
             holder.spinnerRole.setOnItemSelectedListener(new AdapterView.OnItemSelectedListener() {
-                @Override
-                public void onItemSelected(AdapterView<?> parent, View view, int pos, long id) {
-                    String newRole = parent.getItemAtPosition(pos).toString();
+                @Override public void onItemSelected(AdapterView<?> p, View v, int p2, long id) {
+                    String newRole = p.getItemAtPosition(p2).toString();
                     if (!newRole.equals(m.getRole())) {
                         m.setRole(newRole);
                         roleChangeListener.onRoleChanged(m.getId(), newRole);
                     }
                 }
-
-                @Override
-                public void onNothingSelected(AdapterView<?> parent) { }
+                @Override public void onNothingSelected(AdapterView<?> p) {}
             });
         } else {
             holder.tvRole.setVisibility(View.VISIBLE);
             holder.spinnerRole.setVisibility(View.GONE);
+        }
+
+        // Kick button only for owner and non-owner rows
+        if (isOwner && !"Owner".equals(m.getRole())) {
+            holder.btnKick.setVisibility(View.VISIBLE);
+            holder.btnKick.setOnClickListener(v ->
+                    kickMemberListener.onKickMember(m.getId())
+            );
+        } else {
+            holder.btnKick.setVisibility(View.GONE);
         }
     }
 
@@ -90,15 +102,19 @@ public class MembersAdapter extends RecyclerView.Adapter<MembersAdapter.MemberVi
         return memberList.size();
     }
 
+    public List<Member> getMemberList() { return memberList; }
+
     static class MemberViewHolder extends RecyclerView.ViewHolder {
         TextView tvName, tvRole;
         Spinner spinnerRole;
+        Button btnKick;
 
         MemberViewHolder(View view) {
             super(view);
-            tvName = view.findViewById(R.id.tvMemberName);
-            tvRole = view.findViewById(R.id.tvMemberRole);
+            tvName      = view.findViewById(R.id.tvMemberName);
+            tvRole      = view.findViewById(R.id.tvMemberRole);
             spinnerRole = view.findViewById(R.id.spinnerMemberRole);
+            btnKick     = view.findViewById(R.id.btnKickMember);
         }
     }
 }
