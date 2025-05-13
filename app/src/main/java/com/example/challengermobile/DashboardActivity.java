@@ -1,32 +1,44 @@
 package com.example.challengermobile;
 
-import android.content.ClipData;
-import android.content.ClipboardManager;
-import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
 import android.text.InputType;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
 
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
+import androidx.recyclerview.widget.LinearLayoutManager;
+import androidx.recyclerview.widget.RecyclerView;
 
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.firestore.DocumentSnapshot;
 import com.google.firebase.firestore.FirebaseFirestore;
+import com.google.firebase.firestore.FirebaseFirestoreException;
+import com.google.firebase.firestore.Query;
+import com.google.firebase.firestore.QuerySnapshot;
 
+import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class DashboardActivity extends AppCompatActivity {
 
-    private FirebaseAuth     mAuth;
+    private FirebaseAuth      mAuth;
     private FirebaseFirestore db;
+
+    private RecyclerView      scrimRecyclerView;
+    private ScrimAdapter      scrimAdapter;
+    private List<Scrim>       scrimList    = new ArrayList<>();
+    private Button            postScrimButton;
+    private List<String>      userTeamIds  = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -38,6 +50,86 @@ public class DashboardActivity extends AppCompatActivity {
 
         Toolbar toolbar = findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
+
+        scrimRecyclerView = findViewById(R.id.scrimRecyclerView);
+        scrimRecyclerView.setLayoutManager(new LinearLayoutManager(this));
+        scrimAdapter = new ScrimAdapter(scrimList, userTeamIds);
+        scrimRecyclerView.setAdapter(scrimAdapter);
+
+        postScrimButton = findViewById(R.id.postScrimButton);
+        postScrimButton.setOnClickListener(v ->
+                startActivity(new Intent(this, PostScrimActivity.class))
+        );
+
+        setupScrimListener();
+        fetchUserTeamIds();
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        fetchUserTeamIds();
+    }
+
+    private void fetchUserTeamIds() {
+        FirebaseUser user = mAuth.getCurrentUser();
+        if (user == null) return;
+
+        db.collection("users")
+                .document(user.getUid())
+                .collection("teams")
+                .get()
+                .addOnSuccessListener(qs -> {
+                    userTeamIds.clear();
+                    for (DocumentSnapshot doc : qs.getDocuments()) {
+                        userTeamIds.add(doc.getId());
+                    }
+                    scrimAdapter.setUserTeamIds(userTeamIds);
+                    scrimAdapter.notifyDataSetChanged();
+                })
+                .addOnFailureListener(e ->
+                        Toast.makeText(this,
+                                "Failed to load your teams: " + e.getMessage(),
+                                Toast.LENGTH_LONG).show()
+                );
+    }
+
+    private void setupScrimListener() {
+        db.collection("scrims")
+                .orderBy("timestamp", Query.Direction.ASCENDING)
+                .addSnapshotListener((snapshots, e) -> {
+                    if (e != null) {
+                        Toast.makeText(this,
+                                "Error loading scrims: " + e.getMessage(),
+                                Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+                    List<Scrim> updated = new ArrayList<>();
+                    for (DocumentSnapshot doc : snapshots.getDocuments()) {
+                        String id        = doc.getId();
+                        String teamId    = doc.getString("teamId");
+                        String teamName  = doc.getString("teamName");
+                        String teamRank  = doc.get("teamRank") != null
+                                ? doc.get("teamRank").toString() : "";
+                        Date   timestamp = doc.getDate("timestamp");
+                        String format    = doc.getString("format");
+                        String status    = doc.getString("status");
+
+                        Scrim s = new Scrim(id, teamId, teamName, teamRank, timestamp, format);
+                        s.setStatus(status);
+
+                        Object pr = doc.get("pendingRequests");
+                        if (pr instanceof List) {
+                            List<String> pending = new ArrayList<>();
+                            for (Object o : (List<?>) pr) {
+                                if (o != null) pending.add(o.toString());
+                            }
+                            s.setPendingRequests(pending);
+                        }
+                        updated.add(s);
+                    }
+                    scrimAdapter.updateList(updated);
+                });
     }
 
     @Override
@@ -57,20 +149,15 @@ public class DashboardActivity extends AppCompatActivity {
                     .collection("teams")
                     .get()
                     .addOnSuccessListener(qs -> {
-                        int order = 20;
-                        menu.removeGroup(R.id.group_teams);
+                        int order = 3;  // after Profile (1) & Create (2)
                         for (DocumentSnapshot doc : qs.getDocuments()) {
-                            String name = doc.getString("teamName");
-                            String id   = doc.getId();
-                            Intent intent = new Intent(this, TeamDashboardActivity.class)
-                                    .putExtra(TeamDashboardActivity.EXTRA_TEAM_ID, id);
-
                             menu.add(
                                     R.id.group_teams,
                                     Menu.NONE,
                                     order++,
-                                    name
-                            ).setIntent(intent);
+                                    doc.getString("teamName")
+                            ).setIntent(new Intent(this, TeamDashboardActivity.class)
+                                    .putExtra(TeamDashboardActivity.EXTRA_TEAM_ID, doc.getId()));
                         }
                     });
         }
@@ -79,27 +166,38 @@ public class DashboardActivity extends AppCompatActivity {
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
-        int mid = item.getItemId();
-        if (mid == R.id.menu_profile) {
-            startActivity(new Intent(this, ProfileActivity.class));
-            return true;
-        }
-        if (mid == R.id.menu_create_team) {
-            startActivity(new Intent(this, CreateTeamActivity.class));
-            return true;
-        }
-        if (mid == R.id.menu_join_team) {
-            showJoinTeamDialog();
-            return true;
-        }
-        if (mid == R.id.menu_logout) {
-            mAuth.signOut();
-            startActivity(new Intent(this, LoginActivity.class));
-            finish();
+        int id = item.getItemId();
+
+        if (id == R.id.menu_notifications) {
+            startActivity(new Intent(this, NotificationsActivity.class));
             return true;
         }
         if (item.getGroupId() == R.id.group_teams) {
+            String teamId = item.getIntent()
+                    .getStringExtra(TeamDashboardActivity.EXTRA_TEAM_ID);
+            getSharedPreferences("MyPrefs", MODE_PRIVATE)
+                    .edit()
+                    .putString("currentTeamId", teamId)
+                    .apply();
             startActivity(item.getIntent());
+            return true;
+        }
+        if (id == R.id.menu_profile) {
+            startActivity(new Intent(this, ProfileActivity.class));
+            return true;
+        }
+        if (id == R.id.menu_create_team) {
+            startActivity(new Intent(this, CreateTeamActivity.class));
+            return true;
+        }
+        if (id == R.id.menu_join_team) {
+            showJoinTeamDialog();
+            return true;
+        }
+        if (id == R.id.menu_logout) {
+            mAuth.signOut();
+            startActivity(new Intent(this, LoginActivity.class));
+            finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
@@ -119,8 +217,7 @@ public class DashboardActivity extends AppCompatActivity {
                         Toast.makeText(this, "Please enter a code", Toast.LENGTH_SHORT).show();
                         return;
                     }
-
-                    // 1) Find the team document by joinCode
+                    // 1) Find team by joinCode
                     db.collectionGroup("teams")
                             .whereEqualTo("joinCode", code)
                             .get()
@@ -129,11 +226,10 @@ public class DashboardActivity extends AppCompatActivity {
                                     Toast.makeText(this, "Invalid code", Toast.LENGTH_SHORT).show();
                                     return;
                                 }
-
                                 DocumentSnapshot t = qs.getDocuments().get(0);
                                 String ownerUid = t.getReference()
-                                        .getParent()     // .../teams
-                                        .getParent()     // .../users/{ownerUid}
+                                        .getParent()  // ./teams
+                                        .getParent()  // ./users/{ownerUid}
                                         .getId();
                                 String teamId   = t.getReference().getId();
                                 String teamName = t.getString("teamName");
@@ -143,7 +239,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                                 String me = mAuth.getCurrentUser().getUid();
 
-                                // 2) Prepare team metadata
+                                // 2) Prepare metadata
                                 Map<String,Object> data = new HashMap<>();
                                 data.put("teamName", teamName);
                                 data.put("game",     game);
@@ -161,10 +257,10 @@ public class DashboardActivity extends AppCompatActivity {
                                         .document(teamId)
                                         .set(data)
                                         .addOnSuccessListener(a -> {
-                                            // 4) Mark me as a member under the owner's members subcollection
+                                            // 4) Add membership under owner’s subcollection
                                             Map<String,Object> member = new HashMap<>();
                                             String display = mAuth.getCurrentUser().getDisplayName();
-                                            if (display == null) display = me;
+                                            if (display == null || display.isEmpty()) display = me;
                                             member.put("name", display);
                                             member.put("role", "Member");
 

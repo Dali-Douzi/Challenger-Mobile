@@ -14,6 +14,10 @@
     <string name="leave_team">Leave Team</string>
     <string name="delete_team">Delete Team</string>
     <string name="team_logo">Team Logo</string>
+    <string name="menu_logout">Logout</string>
+    <string name="menu_create_team">Create Team</string>
+    <string name="menu_profile">Profile</string>
+    <string name="menu_join_team">Join team</string>
 
     <string-array name="video_game_list">
         <item>League of Legends</item>

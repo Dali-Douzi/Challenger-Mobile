@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/dashboard_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     tools:context=".DashboardActivity">
@@ -12,43 +13,33 @@
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:background="?attr/colorPrimary"
         android:title="@string/welcome_to_the_dashboard"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
-    <!-- Scrim list -->
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/scrimRecyclerView"
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        app:layout_constraintTop_toBottomOf="@id/toolbar"
-        app:layout_constraintBottom_toTopOf="@id/requestScrimButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent" />
-
-    <!-- Request Scrim -->
-    <Button
-        android:id="@+id/requestScrimButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Request Scrim"
-        app:layout_constraintBottom_toTopOf="@id/postScrimButton"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="8dp"
-        tools:ignore="HardcodedText" />
-
-    <!-- Post Scrim -->
+    <!-- Post Scrim Button -->
     <Button
         android:id="@+id/postScrimButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="Post Scrim"
+        android:layout_margin="16dp"
+        app:layout_constraintTop_toBottomOf="@id/toolbar"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- Scrims List -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/scrimRecyclerView"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintTop_toBottomOf="@id/postScrimButton"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
-        android:layout_marginBottom="16dp"
-        tools:ignore="HardcodedText" />
+        tools:listitem="@layout/scrim_item" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

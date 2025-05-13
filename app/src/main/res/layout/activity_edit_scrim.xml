@@ -10,7 +10,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <!-- Team selector -->
+        <!-- Team (read-only) -->
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
@@ -18,9 +18,10 @@
         <Spinner
             android:id="@+id/spinnerTeam"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"/>
+            android:layout_height="wrap_content"
+            android:enabled="false"/>
 
-        <!-- Day selector -->
+        <!-- Day -->
         <TextView
             android:layout_marginTop="16dp"
             android:layout_width="wrap_content"
@@ -31,7 +32,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-        <!-- Time selector -->
+        <!-- Time -->
         <TextView
             android:layout_marginTop="16dp"
             android:layout_width="wrap_content"
@@ -42,7 +43,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-        <!-- Format selector -->
+        <!-- Format -->
         <TextView
             android:layout_marginTop="16dp"
             android:layout_width="wrap_content"
@@ -53,12 +54,27 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"/>
 
-        <!-- Validate button -->
-        <Button
-            android:id="@+id/btnValidate"
+        <!-- Buttons: Delete + Validate -->
+        <LinearLayout
             android:layout_marginTop="24dp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="Validate"/>
+            android:orientation="horizontal"
+            android:gravity="end">
+
+            <Button
+                android:id="@+id/btnDelete"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Delete"/>
+
+            <Button
+                android:id="@+id/btnValidate"
+                android:layout_marginStart="16dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Validate"/>
+        </LinearLayout>
+
     </LinearLayout>
 </ScrollView>

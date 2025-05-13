@@ -56,6 +56,15 @@
             android:parentActivityName=".DashboardActivity"
             android:theme="@style/Theme.ChallengerMobile"/>
 
-    </application>
+        <activity android:name=".EditScrimActivity"
+            android:label="Edit Scrim"
+            android:theme="@style/Theme.ChallengerMobile"/>
 
+        <activity
+            android:name=".NotificationsActivity"
+            android:label="Notifications"
+            android:parentActivityName=".DashboardActivity"
+            android:theme="@style/Theme.ChallengerMobile" />
+
+    </application>
 </manifest>

@@ -1,4 +1,3 @@
-// MembersAdapter.java
 package com.example.challengermobile;
 
 import android.view.LayoutInflater;
